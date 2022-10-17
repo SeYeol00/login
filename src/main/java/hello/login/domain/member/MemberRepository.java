@@ -35,12 +35,23 @@ public class MemberRepository {
     }
 
     public Optional<Member> findByLoginId(String loginId){
-        List<Member> all = findAll();
-        for (Member m : all) {
-            if(m.getLoginId().equals(loginId)){
-                return Optional.of(m);
-            }
-        }
-        return Optional.empty();
+//        List<Member> all = findAll();
+//        for (Member m : all) {
+//            if(m.getLoginId().equals(loginId)){
+//                return Optional.of(m);
+//            }
+//        }
+//        return Optional.empty();
+
+        // 람다식 표현 요즘은 기본으로 써야한다.
+        return findAll().stream()//리스트를 스트림으로 바꾼다.
+                // filter는 sql의 where절 느낌으로 보면 된다. 조건식
+                // 즉 filter에 if 조건절을 넣어 반환하는 것이다.
+                .filter(m->m.getLoginId().equals(loginId))
+                .findFirst();
+    }
+
+    public void clearStore(){
+        store.clear();
     }
 }
