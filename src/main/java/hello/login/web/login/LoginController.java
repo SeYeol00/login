@@ -10,10 +10,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
@@ -85,7 +82,7 @@ public class LoginController {
         return "redirect:/";
     }
 
-    @PostMapping("/login")
+    //@PostMapping("/login")
     public String loginV3(@Validated  @ModelAttribute("loginForm") LoginForm loginForm,
                           BindingResult bindingResult,
                           // 리스폰스에 쿠키를 넣을 것이다.
@@ -119,6 +116,42 @@ public class LoginController {
         return "redirect:/";
     }
 
+    @PostMapping("/login")
+    public String loginV4(@Validated  @ModelAttribute("loginForm") LoginForm loginForm,
+                          // 없으면은 디폴트벨류 "/"로 갈 것
+                          @RequestParam(defaultValue = "/") String redirectURL,
+                          BindingResult bindingResult,
+                          // 리스폰스에 쿠키를 넣을 것이다.
+                          HttpServletResponse response,
+                          // 자바에 있는 세션 사용
+                          HttpServletRequest request){
+        // 아이디나 비밀번호가 빈 경우
+        if(bindingResult.hasErrors()){
+            return "login/loginForm";
+        }
+        // 로그인 비즈니스 로직
+        Member loginMember = loginService.login(loginForm.getLoginId(), loginForm.getPassword());
+        // 로그인 실패시
+        if(loginMember == null){
+            // 글로벌 에러
+            bindingResult.reject("loginFail", "아이디 또는 비밀번호가 맞지 않습니다.");
+            return "login/loginForm";
+        }
+
+        // 로그인 성공 처리
+        // 세션이 있으면 세션 반환, 없으면 신규 세션을 생성
+        HttpSession session = request.getSession();
+
+        // 세션에 로그인 회원 정보 보관
+        // 세션의 키값, 벨류값
+        session.setAttribute(SessionConst.LOGIN_MEMBER,loginMember);
+
+
+        // 세션 관리자를 통해 세션을 생성하고, 회원 데이터를 보관
+//        sessionManager.createSession(loginMember,response);
+        return "redirect:"+redirectURL;
+    }
+
 
     //@PostMapping("/logout")
     public String logout(HttpServletResponse response){
@@ -145,6 +178,8 @@ public class LoginController {
         return "redirect:/";
 
     }
+
+
 
     private void expireCookie(HttpServletResponse response, String cookieName) {
         // 쿠키는 하나만 되나보다...? 그래서 기존 껄 덮어버린 걸지도
